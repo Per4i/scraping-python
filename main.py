@@ -99,8 +99,8 @@ def run_code():
     pass
 
 # запускаем код каждый час
-# schedule.every().hour.do(run_code)
-schedule.every(10).minutes.do(run_code)
+schedule.every().hour.do(run_code)
+# schedule.every(10).minutes.do(run_code)
 
 while True:
     schedule.run_pending()
