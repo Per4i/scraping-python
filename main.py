@@ -1,7 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By 
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
+import os
 import telebot
 import time
 import schedule
@@ -10,24 +11,32 @@ import re
 from bs4 import BeautifulSoup
 def run_code():
     driver = webdriver.Chrome(executable_path = "C:\\Users\\асер\\Рабочий стол\\парсинг\\chromedriver.exe")
-    url = "https://lk.kinderphoto.ru/pp/index.php"
     try:
+        # Открываем файл и читаем логин и пароль
+        with open('login.txt', 'r') as f:
+            username = f.readline().strip()
+            password = f.readline().strip()
+            # Устанавливаем токен бота и ID чата в Telegram
+            TOKEN = f.readline().strip()
+            CHAT_ID = f.readline().strip()
+            # устанавливаем url
+            url = f.readline().strip()
         driver.get(url=url)
         time.sleep(5)
         login_input = driver.find_element(By.ID, "ilogin")
         login_input.clear()
-        login_input.send_keys("556")
+        login_input.send_keys(username)
         time.sleep(5)
         pass_input = driver.find_element(By.ID, "password")
         pass_input.clear()
-        pass_input.send_keys("497487")
+        pass_input.send_keys(password)
         pass_input.send_keys(Keys.ENTER)
         time.sleep(5)
         button = driver.find_element(By.XPATH, "//a[@onclick=\"javascript:XXQ('SetSPar^ZwKPP','VOPP_CPage','SELS');document.location.href='?';\"]")
-        action = ActionChains(driver)
         time.sleep(2)
         driver.execute_script("arguments[0].click();", button)
         time.sleep(5)
+    
         # Получаем код страницы
         page_source = driver.page_source
         # Записываем код страницы в файл
@@ -68,7 +77,7 @@ def run_code():
         with io.open('Data_foto_ru.txt', 'r', encoding='utf-8') as f:
             # читаем содержимое файла
             lines = f.readlines()
-    # удаляем первую строку и заменяем на новую
+        # удаляем первую строку и заменяем на новую
         lines[0] = "Сейчас доступны вот такие съемки\n"
         # удаляем строки, содержащие "инф Д"
         lines = [line for line in lines if "инф Д" not in line]
@@ -80,11 +89,6 @@ def run_code():
         # сохраняем изменения в том же файле
         with io.open('Data_foto_ru.txt', 'w', encoding='utf-8') as f:
             f.writelines(new_lines)
-
-        # Устанавливаем токен бота и ID вашего чата в Telegram
-        TOKEN = '5389354945:AAEL8T7PFmzeLyiGSVgXT7M6FDInjhONE-o'
-        CHAT_ID = '1870658619'
-
         # Создание экземпляра бота
         bot = telebot.TeleBot(TOKEN)
         # Чтение данных из файла
@@ -92,16 +96,26 @@ def run_code():
             data = f.read()
             # Отправляем сообщение
         bot.send_message(chat_id=CHAT_ID, text = data)
-
+    except NoSuchElementException:
+        print("Элементы на странице не найдены")
+    except:
+        print("что-то пошло не так. Скорее всего разрыв соединения")
     finally:
         driver.close()
         driver.quit()
+        # удаляем файлы с которыми работали
+        if os.path.exists('page.html'):
+            os.remove('page.html')
+        if os.path.exists('Data_foto_ru.txt'):
+            os.remove('Data_foto_ru.txt')
+        if os.path.exists('Data_foto.html'):
+            os.remove('Data_foto.html')
     pass
 
 # запускаем код каждый час
-schedule.every().hour.do(run_code)
-# schedule.every(10).minutes.do(run_code)
-
+# schedule.every().hour.do(run_code)
+schedule.every(30).minutes.do(run_code)
 while True:
     schedule.run_pending()
-    time.sleep(1)   
+    time.sleep(1)  
+     
